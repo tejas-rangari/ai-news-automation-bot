@@ -1,0 +1,256 @@
+{
+  "name": "AI News Automation Bot",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "4b9d1db2-c79d-4d9b-9212-ed9e5b8f96fb",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d2cddbcc-43b6-4051-890d-ab84887ddfd9",
+              "name": "urls",
+              "value": "[   \"https://timesofindia.indiatimes.com/rssfeedstopstories.cms\",   \"https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml\",   \"https://economictimes.indiatimes.com/rssfeedsdefault.cms\" ]",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "918a9d8e-baa8-4476-82b3-5a20cceb4b02",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "urls",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "20eab4cd-a662-446a-9358-f705e44edf25",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.urls }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        624,
+        0
+      ],
+      "id": "7b7c5bcc-a1e6-4fa7-a5ce-5e47711c9c22",
+      "name": "RSS Read"
+    },
+    {
+      "parameters": {
+        "type": "random"
+      },
+      "type": "n8n-nodes-base.sort",
+      "typeVersion": 1,
+      "position": [
+        832,
+        0
+      ],
+      "id": "d7095203-acc2-4dbe-8062-9015fe35597f",
+      "name": "Sort"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        1040,
+        0
+      ],
+      "id": "cca30657-8702-4bc6-8bd1-4ebbb4babf4d",
+      "name": "Limit"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an AI news summarizer.\n\nSummarize the following news article in this exact format:\n\n📰 AI News Summary\n\nTitle:\n{{ $json.title }}\n\nSummary:\n- Write 3 short bullet points\n- Keep summary concise\n- No extra explanation\n- No notes\n- No markdown headings\n\nSource:\n{{ $json.link }}\n\nNews Content:\n{{ $json.contentSnippet }}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1248,
+        0
+      ],
+      "id": "ae15abba-fbd3-49ef-86b5-22f6af13146c",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        1184,
+        208
+      ],
+      "id": "d04e71be-dab4-4c50-8bd4-c95c2125db1c",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "XLUobgHd5vbC0UiA",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "1848667169",
+        "text": "={{$json.text}}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1600,
+        0
+      ],
+      "id": "ac206a26-bc4c-40a2-8aaf-df1e443a47c4",
+      "name": "Send a text message",
+      "webhookId": "0df731b7-95f4-415a-87f1-64e4c955f208",
+      "credentials": {
+        "telegramApi": {
+          "id": "fgWH0q0FU1FuMIh5",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "RSS Read",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RSS Read": {
+      "main": [
+        [
+          {
+            "node": "Sort",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sort": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "da233f81-85e1-45cd-8e35-92cd8edaad0b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "0408c6d1ff93007f7cd7481ea470caf80487c3b73367408f47ff854ac62a2a63"
+  },
+  "id": "fKJnaFIl8y2biIaa",
+  "tags": []
+}
